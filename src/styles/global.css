@@ -1,0 +1,1065 @@
+/* ---------------------------------------------------------------------------
+ * Estilos globais — portados do bloco <helmet> do protótipo `Home Redesenhada`.
+ * Os temas claro/escuro são expostos como custom properties e ativados pelas
+ * classes `.theme-light` / `.theme-dark` aplicadas ao <main> e aos overlays.
+ * ------------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------------
+ * Tokens canônicos do design system da Mutual.
+ *
+ * A fonte da verdade é `@mutual-processadora-de-pagamentos/lib-ui/tokens.css`,
+ * consumida pelo backoffice e pelo PaaS. O pacote vive no GitHub Packages e
+ * exige autenticação, que este repositório ainda não tem — então os valores
+ * abaixo são a réplica dos documentados em `PAAS-DS-GAP.md`. Quando o acesso
+ * ao pacote existir, este bloco sai e vira um `@import` da lib.
+ * ------------------------------------------------------------------------- */
+:root {
+  /* Fundo da área de conteúdo (o `--canvas` da lib). */
+  --canvas: #f7f8fa;
+  /* Marca, como reserva. Cada tema redefine estes quatro; o valor aqui só
+   * serve para o que renderiza fora de um `.theme-*` (a tela de acesso antes
+   * de a sessão valer, por exemplo). */
+  --brand: #232f63;
+  --brand-deep: #161d33;
+  --brand-bar: #1b2450;
+  --brand-on: #ffffff;
+  --accent: #fcb71b;
+  --accent-on: #232f63;
+  --app-bg: #f4f6fb;
+  --header-bg: rgba(255, 255, 255, 0.7);
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05), 0 1px 3px rgba(16, 24, 40, 0.07);
+  --shadow-md: 0 2px 4px rgba(16, 24, 40, 0.05), 0 6px 16px rgba(16, 24, 40, 0.08);
+  --radius: 0.75rem;
+  --radius-lg: var(--radius);
+
+  /* ── A rampa do cromo ────────────────────────────────────────────────
+   *
+   * Barra lateral e barra superior não seguem o tema: elas são pintadas com a
+   * marca (`--brand-deep` e `--brand-bar`) e continuam escuras nos três temas.
+   * Então o texto que vai por cima delas não pode usar `--ink` nem `--muted` —
+   * esses invertem com o tema e sumiriam no claro.
+   *
+   * Os tons já existiam, calibrados, mas cravados em `Sidebar.jsx` e
+   * `TopBar.jsx` — 42 e 25 literais. Enquanto `--brand-deep` for uma constante
+   * isso funciona; no momento em que a marca virar configurável, cada um desses
+   * literais passa a ser uma razão de contraste calculada contra um fundo que
+   * já mudou. Declarar aqui é o que permite a rampa acompanhar a marca.
+   *
+   * Dois valores mudaram, porque a auditoria de `lib/paresTema.js` os reprovou
+   * sobre `--brand-deep` e os dois pintam texto de 10px:
+   *
+   *   --nav-dim    era #6b7794 (3,73:1) — o selo ⌘K e a nota de item
+   *   --nav-grupo  era #5f6d8c (3,22:1) — os rótulos CONTA, OPERAÇÕES
+   *
+   * O `--nav-rotulo` (#7d89a6) é o caso interessante: ele é **texto** na barra
+   * lateral — "PATRIMÔNIO TOTAL", os rótulos do cartão de sessão, o e-mail do
+   * rodapé — e é **forma** na barra superior, onde só pinta chevron. Sobre
+   * `--brand-deep` dá 4,77:1 e cumpre os 4,5:1 de texto; sobre `--brand-bar`
+   * cai a 4,24:1, que não cumpriria — e ali ele não é texto. A distinção já
+   * estava feita e anotada em `TopBar.jsx`, que subiu só a linha da conta para
+   * #909ebd e deixou os ícones onde estavam. O token preserva as duas leituras,
+   * e a matriz de `lib/paresTema.js` audita cada uma com o alvo que lhe cabe.
+   *
+   * As superfícies vinham em .05 e .06 de alfa, e as linhas em .07, .08 e .12.
+   * Diferenças de um ponto de alfa sobre azul-marinho que ninguém decidiu —
+   * viraram duas e duas, pelo mesmo critério de `components/ui/tokens.js`.
+   *
+   * Os três tons de valor do cartão de sessão (#e6ecf8, #cfd8ea, #cfe0ff)
+   * seguiram o mesmo destino: variavam em poucos por cento, no mesmo papel, e
+   * viraram um `--nav-valor`. */
+  --nav-ink: #ffffff;
+  --nav-ink-2: #cdd6e6;
+  --nav-ink-3: #c4cee0;
+  --nav-valor: #e6ecf8;
+  --nav-muted: #909ebd;
+  --nav-icon: #8a97b0;
+  --nav-rotulo: #7d89a6;
+  --nav-dim: #7885a6;
+  --nav-grupo: #7485ab;
+  --nav-acao: #8fa6d8;
+  --nav-surface: rgba(255, 255, 255, 0.06);
+  --nav-line: rgba(255, 255, 255, 0.08);
+  --nav-line-forte: rgba(255, 255, 255, 0.12);
+
+  /* Estado dentro do cromo. Não são os `--status-*` do tema: aqueles são
+   * calibrados para fundo de cartão e sumiriam sobre o azul-marinho. */
+  --nav-ok: #3ddc97;
+  --nav-aviso: #e8c98a;
+  --nav-erro: #ff8b9c;
+
+  /* Duas superfícies opacas do cromo: o menu de sessão e o avatar. Opacas e não
+   * `rgba` porque o menu flutua sobre o conteúdo da aplicação, não sobre a
+   * barra — translúcido ali deixaria o texto de trás atravessar. */
+  --nav-menu: #16203c;
+  --nav-avatar: #26426e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* A tipografia é Montserrat e continua sendo, por decisão tomada.
+ *
+ * O Manual de Identidade Visual da MutualPay v1.0 pede Poppins em títulos e
+ * Inter em corpo de texto, com pesos Bold e SemiBold. Não é o que vale aqui:
+ * a escala deste terminal tira hierarquia de tamanho e cor, não de peso, e
+ * reserva o 500 para título em tela densa (ver `.text-page-title` abaixo).
+ * Adotar os pesos do manual significaria refazer essa escala inteira.
+ *
+ * Havia um terceiro tema — "Azul MutualPay" — que aplicava a paleta do manual e
+ * mantinha esta tipografia. Ele foi removido por decisão de produto. A paleta da
+ * MutualPay continua alcançável por Configurações › Aparência, como marca
+ * configurada; o que saiu foi o tema pronto, não a possibilidade. */
+body {
+  margin: 0;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  background: var(--canvas);
+  color: #1f2937;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Escala tipográfica semântica da lib. A hierarquia vem de tamanho e cor, não
+ * de peso: a regra do DS mantém 300/400 como alvo e reserva o 500 para título
+ * em tela densa. */
+.text-page-title,
+.page-header-title {
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.text-section-title {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.text-card-title {
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+.text-body {
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.text-label {
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+/* Hover-lift: o card sobe da elevação pequena para a média. É o único uso de
+ * sombra que o DS admite além do repouso. */
+.section-card,
+.kpi-card {
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.16s ease;
+  /* Item de grid/flex nasce com `min-width: auto`, e o mínimo automático é o
+   * min-content. Numa aba com chave de API — `mtl_sec_` seguido de vinte e
+   * quatro marcadores em monoespaçada, texto sem nenhum ponto de quebra — esse
+   * mínimo dá 371px e o cartão passa por cima da borda da tela num aparelho de
+   * 375. Com `min-width: 0` o cartão obedece à faixa e o texto de dentro
+   * resolve o corte com reticências. */
+  min-width: 0;
+}
+
+.section-card:hover,
+.kpi-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section-card,
+  .kpi-card {
+    transition: none;
+  }
+}
+
+a {
+  color: #1f5fd6;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #16233d;
+}
+
+input,
+select {
+  font-family: inherit;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+b,
+strong {
+  font-weight: 500;
+}
+
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(15, 31, 56, 0.18);
+  border-radius: 9px;
+}
+
+@keyframes cfspin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.theme-light {
+  --canvas: #f7f8fa;
+  --app-bg: #f4f6fb;
+  --header-bg: rgba(255, 255, 255, 0.7);
+  /* Marca — Mutual Capital. O azul e o dourado que o terminal usa hoje. */
+  --brand: #232f63;
+  --brand-deep: #161d33;
+  --brand-bar: #1b2450;
+  --brand-on: #ffffff;
+  --accent: #fcb71b;
+  --accent-on: #232f63;
+  --surface: #fff;
+  --surface-2: #f7f9fc;
+  --surface-3: #f2f5fa;
+  --ink: #232f63;
+  --ink-2: #3a4a68;
+  --muted: #5a6a86;
+  /* Era #8592ab: 3,14:1 sobre branco e 2,79:1 sobre o rosa de débito, contra o
+     mínimo de 4,5:1 que a WCAG AA pede para texto pequeno — e este é o tom das
+     legendas, dos subtítulos de cartão e dos rótulos de operação, quase todos
+     entre 10,5 e 12px. Eram 89 amostras reprovadas no tema claro.
+
+     #5f6d8c passa em todos os fundos **claros** do sistema (o pior é 4,61:1,
+     sobre --acc-red-bg). Não passa no cromo escuro: sobre --brand-deep dá
+     3,22:1, e é por isso que a barra lateral e a barra superior têm a rampa
+     --nav-* própria, logo acima. A afirmação anterior — "todos os fundos do
+     sistema" — estava errada porque a medição de então só olhou os fundos
+     claros. Ele fica perto de --muted: nesta faixa de luminosidade não
+     existe cinza que seja mais claro que isto e ainda passe em 4,5:1. A
+     hierarquia entre os dois níveis passa a se apoiar em tamanho e peso, que é
+     onde ela funciona sem custo de legibilidade. */
+  --muted-2: #5f6d8c;
+  --line: rgba(15, 31, 56, 0.09);
+  --line-2: rgba(15, 31, 56, 0.12);
+  --acc-blue-bg: #eef2fb;
+  --acc-blue-ink: #2556c4;
+  --acc-green-bg: #eaf6ee;
+  --acc-green-ink: #157f45;
+  --acc-amber-bg: #fff7e6;
+  /* Era #9a7c3d: 3,70:1 sobre o próprio --acc-amber-bg, e é o par que pinta os
+     selos de contagem ("4 pendências", "3 ativas") em 10,5–11px. #846829
+     chega a 4,86:1 sem sair do âmbar. */
+  --acc-amber-ink: #846829;
+  --acc-red-bg: #fdeef0;
+  --acc-red-ink: #c33d47;
+  --section-icon-color: #232f63;
+  --status-success: #157f45;
+  /* Era #b8790c: 3,23:1 sobre branco, e este token pinta texto de estado —
+     "Processando", "Confirmando", "Off Market" —, quase sempre em 10,5–12px.
+     #9c6108 chega a 4,66:1 no pior fundo do sistema. */
+  --status-warning: #9c6108;
+  --status-error: #c33d47;
+  --status-info: #2556c4;
+  /* Era #8592ab — exatamente o tom que o `--muted-2` acima descartou, e pelo
+     mesmo motivo: 3,14:1 sobre branco contra o mínimo de 4,5:1. A correção de
+     lá não alcançou este token, e ele pinta texto de estado ("Processando",
+     "Aguardando", "Confirmando") na mesma faixa de 10,5 a 12px.
+
+     Encontrado pela auditoria de `lib/paresTema.js`, que percorre os pares que
+     o sistema realmente renderiza. Recebe o valor que o `--muted-2` já provou
+     nesta faixa de luminosidade: não existe cinza mais claro que passe em AA. */
+  --status-pending: #5f6d8c;
+  --value-positive: #157f45;
+  --value-negative: #c33d47;
+
+  /* Paleta categórica dos gráficos — as fatias de uma rosca, as séries de uma
+   * barra empilhada. Sete matizes porque é o teto do que se distingue lado a
+   * lado num anel de 25px; acima disso duas fatias viram a mesma cor para quem
+   * está de relance.
+   *
+   * As três primeiras não são escolha estética: marca, sucesso e atenção são os
+   * mesmos tons que o resto do terminal usa, então a fatia de "concluído" tem a
+   * cor de concluído em qualquer tela. As quatro seguintes existem só para
+   * separar categoria de categoria — roxo, vermelho, ciano e rosa —, e cada
+   * tema tem as suas: o roxo #6f56d9 sobre fundo escuro fica ilegível, como
+   * qualquer cor de contraste pensada para papel branco. */
+  --chart-1: #232f63;
+  --chart-2: #157f45;
+  --chart-3: #b8790c;
+  --chart-4: #6f56d9;
+  --chart-5: #c33d47;
+  --chart-6: #1596a8;
+  --chart-7: #b8478f;
+  /* Elevação canônica do design system — ver bloco :root abaixo. */
+  --card-shadow: var(--shadow-sm);
+}
+
+.theme-dark {
+  --canvas: #0e1524;
+  --app-bg: #0e1524;
+  --header-bg: rgba(21, 28, 48, 0.8);
+  /* Marca — Mutual Capital. O azul e o dourado que o terminal usa hoje. */
+  --brand: #232f63;
+  --brand-deep: #161d33;
+  --brand-bar: #1b2450;
+  --brand-on: #ffffff;
+  --accent: #fcb71b;
+  --accent-on: #232f63;
+  --surface: #151c30;
+  --surface-2: #1b2338;
+  --surface-3: #212c46;
+  --ink: #e8edf7;
+  --ink-2: #c8d3e8;
+  --muted: #9fadc6;
+  /* 4,43:1 sobre --surface-3 era o único ponto abaixo de AA no tema escuro.
+     #93a2bd sobe o pior caso para 5,38:1. */
+  --muted-2: #93a2bd;
+  --line: rgba(255, 255, 255, 0.09);
+  --line-2: rgba(255, 255, 255, 0.14);
+  --acc-blue-bg: rgba(64, 120, 255, 0.14);
+  --acc-blue-ink: #8fb2ff;
+  --acc-green-bg: rgba(38, 161, 123, 0.16);
+  --acc-green-ink: #59d99b;
+  --acc-amber-bg: rgba(252, 183, 27, 0.14);
+  --acc-amber-ink: #f0c268;
+  --acc-red-bg: rgba(229, 87, 106, 0.16);
+  --acc-red-ink: #ff8b9c;
+  --section-icon-color: #9aafd4;
+  --status-success: #59d99b;
+  --status-warning: #f0c268;
+  --status-error: #ff8b9c;
+  --status-info: #8fb2ff;
+  --status-pending: #8592ab;
+  --value-positive: #59d99b;
+  --value-negative: #ff8b9c;
+  --chart-1: #8fb2ff;
+  --chart-2: #59d99b;
+  --chart-3: #f0c268;
+  --chart-4: #b9a4ff;
+  --chart-5: #ff8b9c;
+  --chart-6: #5ed0e0;
+  --chart-7: #ff9ed4;
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+
+.theme-dark select,
+.theme-dark option {
+  background: #1b2338;
+  color: #e8edf7;
+}
+
+.theme-dark input::placeholder {
+  color: #7b89a3;
+}
+
+/* O host raiz ocupa a viewport inteira, como no runtime do protótipo. */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+/* ---------------------------------------------------------------------------
+ * Checkout
+ *
+ * O único lugar do projeto com media query própria: o cartão do checkout põe
+ * formulário e resumo lado a lado, e a razão entre as colunas é fixa (o resumo
+ * não deve crescer com a tela). `auto-fit` daria duas colunas iguais, que é
+ * exatamente o que não se quer aqui.
+ * ------------------------------------------------------------------------- */
+.ck-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.ck-two {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.ck-methods {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+@media (min-width: 560px) {
+  .ck-two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 680px) {
+  .ck-methods {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 900px) {
+  .ck-layout {
+    grid-template-columns: minmax(0, 1fr) 306px;
+  }
+
+  .ck-sticky {
+    position: sticky;
+    top: 16px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Acesso
+ *
+ * O painel da marca some abaixo de 900px: numa tela estreita ele empurraria o
+ * cartão de acesso para fora da primeira dobra, e entrar é a única coisa que
+ * importa nessa tela.
+ * ------------------------------------------------------------------------- */
+.lg-brand {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .lg-brand {
+    display: flex;
+    width: 44%;
+    max-width: 560px;
+    flex: none;
+  }
+}
+
+/* Indicador de consulta de CEP em andamento. */
+.ck-girando {
+  animation: ck-giro 0.9s linear infinite;
+}
+
+@keyframes ck-giro {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ck-girando {
+    animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Estrutura da página em tela estreita
+ *
+ * A barra lateral nasceu com 236px fixos e `flex:none`. Num iPhone de 390px
+ * isso deixava 154px para a aplicação inteira, e o resultado não era um número
+ * escapando aqui e ali: era toda a coluna de conteúdo espremida a um terço do
+ * necessário, com valores vazando das caixas em todas as telas.
+ *
+ * Abaixo de 900px a barra sai do fluxo e vira gaveta. O conteúdo passa a ter a
+ * largura inteira da tela. O ponto de corte é o mesmo de `logic/viewport.js` —
+ * se os dois divergirem aparece gaveta aberta sem gaveta na tela.
+ * ------------------------------------------------------------------------- */
+.app-aside {
+  width: var(--nav-w, 236px);
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  transition: width 0.18s;
+  /* Cinto de segurança do modo compacto. A barra passa de 236px a 68px e todo
+   * bloco do topo precisa caber nos 68; quando um não cabe, o excesso saía por
+   * cima do `<main>`, ficava por baixo dele e deixava de receber clique — foi
+   * assim que o botão de recolher virou uma armadilha sem volta. Recortar aqui
+   * não corrige o bloco largo, mas garante que ele nunca cubra a aplicação:
+   * o defeito fica visível dentro da barra em vez de roubar o clique de fora. */
+  overflow-x: hidden;
+}
+
+@media (max-width: 899px) {
+  .app-aside {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 70;
+    width: min(82vw, 280px);
+    height: 100%;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    will-change: transform;
+  }
+
+  .app-aside[data-aberta='1'] {
+    transform: none;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-aside {
+    transition: none;
+  }
+}
+
+/* Cobre o conteúdo enquanto a gaveta está aberta e fecha ao toque. */
+.app-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 65;
+  background: rgba(12, 18, 36, 0.5);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* O botão da gaveta só existe onde existe gaveta. */
+.nav-abrir {
+  display: none;
+}
+
+@media (max-width: 899px) {
+  .nav-abrir {
+    display: inline-flex;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Utilitários de tela estreita
+ *
+ * O layout das telas está em estilo inline, que é a convenção do projeto e
+ * vence qualquer regra de folha. Para dobrar esse layout num iPhone sem
+ * reescrever cada tela em JS, estas classes usam `!important` dentro — e só
+ * dentro — da media query: o inline continua sendo a verdade no desktop, e
+ * abaixo de 900px a folha assume. O `!important` aqui é intencional e é a
+ * única forma de sobrepor o inline sem transformar cada grade num condicional.
+ *
+ * O corte de 900px é o mesmo da gaveta (logic/viewport.js).
+ * ------------------------------------------------------------------------- */
+@media (max-width: 899px) {
+  /* Uma coluna: grades de formulário e de cartões. */
+  .r-1 {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  /* Um filho com `grid-column: span 2` continua pedindo duas colunas depois
+   * do colapso, e o grid cria uma coluna implícita para atendê-lo — a grade
+   * volta a ter duas colunas, agora com larguras arbitrárias. Colapsar a
+   * grade exige colapsar também o vão dos filhos. */
+  .r-1 > * {
+    grid-column: auto !important;
+  }
+
+  /* Duas colunas: faixas de métrica que ainda se leem lado a lado. */
+  .r-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  /* Até 559px, não se leem mais. Com quatro casas em todo valor em Real
+   * (ver ../lib/valor.js), "R$ 21.320,0000" a 19px pede 156px e meia largura
+   * de iPhone dá 133 — o número saía da caixa ou virava reticências. Quem
+   * cede é a coluna, não a precisão: abaixo de 560px a faixa empilha.
+   *
+   * 560px é o mesmo corte de `.ck-two`, e não por acaso: é onde duas colunas
+   * de conteúdo param de caber nesta escala tipográfica. */
+  @media (max-width: 559px) {
+    .r-2 {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+  }
+
+  /* Barras horizontais que precisam quebrar em vez de esticar a página. */
+  .r-wrap {
+    flex-wrap: wrap !important;
+  }
+
+  /* Tabela larga: rola dentro de si em vez de arrastar a página inteira. */
+  .r-x {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Texto que não pode empurrar a caixa: corta com reticências.
+ * Vale em qualquer largura — um nome de razão social comprido estoura a
+ * célula no desktop também, só que ali sobra espaço e não aparece. */
+.r-corta {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------------------
+ * Tabelas em tela estreita
+ *
+ * Uma linha de extrato tem cinco a sete colunas. Espremidas em 390px cada
+ * célula fica com 13 a 30px e o saldo aparece como "R$ 131.6…" — foi esse o
+ * relato de número saindo da caixinha. Encolher a fonte não resolve: o que
+ * falta é largura.
+ *
+ * Então a tabela guarda a largura de que precisa e passa a rolar dentro do
+ * próprio cartão. A página continua sem rolagem horizontal; quem rola é a
+ * tabela, que é o que o usuário espera de uma tabela.
+ * ------------------------------------------------------------------------- */
+@media (max-width: 899px) {
+  .r-tab {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .r-tab-l {
+    min-width: 660px !important;
+  }
+}
+
+/* Painel de Relatórios: a divisória entre a curva e a distribuição é vertical
+ * enquanto as duas colunas estão lado a lado. Quando a `.r-1` as empilha, uma
+ * borda à esquerda vira um risco solto na lateral do bloco de baixo — o que
+ * separa dois blocos empilhados é uma linha em cima deles. */
+@media (max-width: 899px) {
+  .rel-div {
+    border-left: none !important;
+    border-top: 1px solid var(--line) !important;
+  }
+}
+
+/* Respiro lateral das telas. 28px de cada lado custam 56px dos 390px de um
+ * iPhone — 14% da tela gasta em margem, justamente onde ela falta. */
+@media (max-width: 899px) {
+  .r-pad {
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+  }
+}
+
+/* Faixas de valor sugerido: quatro numa linha só cabem em tela larga. */
+@media (max-width: 899px) {
+  .r-faixas {
+    flex-wrap: wrap !important;
+  }
+
+  .r-faixas > * {
+    flex: 1 1 calc(50% - 8px) !important;
+  }
+}
+
+/* Os quatro passos do Enviar Pix somam 368px de rótulo; a coluna tem 360. */
+@media (max-width: 899px) {
+  .r-passos > div {
+    width: 74px !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Carteira em tela estreita
+ *
+ * A linha do ativo tem cinco colunas: logo, ativo, gráfico de 7 dias, saldo e
+ * variação de 24h. Rolando a tabela na horizontal o saldo cai fora da primeira
+ * dobra — e o saldo é a coluna pela qual se abre esta tela.
+ *
+ * Então aqui a linha não rola: ela se reorganiza em três colunas, com o saldo
+ * encostado à direita e a variação logo abaixo dele. O gráfico de 7 dias sai —
+ * é o único dado que some, e a variação de 24h que fica ao lado do saldo diz a
+ * mesma direção em número. Some a forma, não a informação.
+ * ------------------------------------------------------------------------- */
+@media (max-width: 899px) {
+  .ct-linha {
+    grid-template-columns: 38px minmax(0, 1fr) auto !important;
+    column-gap: 11px !important;
+    row-gap: 1px !important;
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+  }
+
+  /* Logo e identificação ocupam as duas linhas da esquerda. */
+  .ct-linha > *:nth-child(1) {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
+  .ct-linha > *:nth-child(2) {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  /* Gráfico de 7 dias: a variação de 24h já diz a direção. */
+  .ct-linha > *:nth-child(3) {
+    display: none;
+  }
+
+  /* Saldo em cima, variação embaixo — os dois visíveis sem rolar. */
+  .ct-linha > *:nth-child(4) {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .ct-linha > *:nth-child(5) {
+    grid-column: 3;
+    grid-row: 2;
+  }
+
+  /* O painel aberto acompanha o novo recuo da linha. */
+  .ct-painel {
+    padding-left: 64px !important;
+    padding-right: 15px !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Sinal de demonstração
+ *
+ * O ponto pulsa enquanto o motor de demonstração está ligado (logic/demo.js).
+ * Não é enfeite: quando uma cobrança liquida sozinha, quem está vendo precisa
+ * ter como saber que aquilo foi o relógio, e não um clique que não deu.
+ * ------------------------------------------------------------------------- */
+.demo-pulso {
+  animation: demo-pulso 1.8s ease-in-out infinite;
+}
+
+@keyframes demo-pulso {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-pulso {
+    animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * O container das telas
+ *
+ * Eram vinte e sete telas, quatorze larguras diferentes — de 640px a 1360px —
+ * e **nenhuma centralizada**. Sem `margin-inline`, uma tela de 640px dentro de
+ * uma área de 1200 encosta na esquerda e deixa meia tela vazia à direita;
+ * navegar entre duas telas de larguras diferentes fazia o conteúdo inteiro
+ * pular de lugar.
+ *
+ * Agora é um container só, centralizado, com o mesmo respiro. A borda esquerda
+ * do conteúdo cai no mesmo lugar em toda tela, que é o que faz a navegação
+ * parar de tremer.
+ *
+ * ## Uma medida padrão, e uma exceção que precisa se declarar
+ *
+ * A medida padrão é **980px de coluna** — a do Checkout. `.tela` já a aplica,
+ * então uma tela nova que só declare `.tela` nasce certa: não há nada a pedir,
+ * a lembrar ou a copiar.
+ *
+ * Essa polaridade é a correção de um defeito de padronização real. Antes o
+ * padrão era 1600 e o 980 era uma classe que cada tela tinha de pedir
+ * (`.tela-painel`), e o resultado foi previsível: **nove telas eram largas por
+ * omissão** — nunca decidiram nada, só herdaram — e duas usavam uma classe
+ * legada (`.tela-ampla`) que valia exatamente o mesmo que não declarar. Toda vez
+ * que a régua mudava, sobrava tela para trás, e quem descobria era o olho de
+ * quem usa. Com o padrão invertido, esquecer produz o comportamento certo, e o
+ * desvio é que fica visível no JSX.
+ *
+ * A exceção se chama `.tela-largo` (1600px), e são **três** as telas que a usam.
+ * Uma por medição e duas por decisão de produto — a distinção importa, porque só
+ * a primeira se justifica sozinha:
+ *
+ *   - **Mesa Premium** — a única que a medição reprovou. Com o teto de 980
+ *     aplicado por cima, a faixa de intervalos (1s 1m 5m 15m 1h 4h 1D) passa a
+ *     precisar de 405px numa caixa de 396: conteúdo preso, sem rolagem própria
+ *     nem pai rolável. É um terminal de negociação com gráfico, onde largura é
+ *     o produto.
+ *   - **Extrato** — aguentou 980 sem um elemento preso, mas é a tela de conferir
+ *     movimentação linha por linha, e ficou de fora a pedido.
+ *   - **Visão geral** — também aguentou, e aqui há um número que sustenta o
+ *     pedido: a 980 a faixa "Precisa de você" fazia três colunas de 318px, e num
+ *     cartão de 318 sobram ~160px de texto depois do ícone e do botão. Títulos
+ *     de ~180px viravam "Cotação OTC expira em 0…". Medi 16 textos cortados
+ *     contra 1 a 1600 — os únicos 15 de todo o sistema. Dava para resolver
+ *     subindo o mínimo da grade para 340 e caindo para duas colunas; mantê-la
+ *     larga resolve sem mexer na grade.
+ *
+ * O critério para uma quarta entrar não é gosto: **o conteúdo tem de provar que
+ * não cabe em 980** — conteúdo preso, página rolando na horizontal, ou tabela
+ * exigindo mais do que tem sem ganhar rolagem própria. Medi as onze telas que
+ * ainda eram largas com o teto de 980 por cima e dez aguentaram; o experimento
+ * está em `scratchpad/exp-restantes.mjs`, e a contagem de reticências em
+ * `scratchpad/med-reticencias.mjs`.
+ *
+ * O 1600 continua sendo o número do PaaS: lá a largura é decidida uma vez, no
+ * `AppShell` da `lib-ui`, cuja prop `maxWidthClassName` tem padrão
+ * `max-w-[1600px]`, e as telas são `w-full` sem contêiner próprio. A diferença é
+ * que aqui ele virou a exceção, não a regra.
+ *
+ * Sobre o `calc(980px + 56px)`: a `.tela` é `border-box` e leva 28px de respiro
+ * por lado, então é a soma que faz a *coluna* medir 980. Abaixo de 900px o
+ * respiro cai para 15px e a conta acompanha.
+ *
+ * ## O `.tela-form` de 720px foi removido
+ *
+ * Ele existia como miolo de formulário centrado dentro da `.tela`, com o
+ * argumento de que linha de texto além de ~75 caracteres cansa a leitura. O
+ * argumento é verdadeiro para **texto corrido**; o efeito prático foi outro.
+ *
+ * Nove telas o usavam e vinte não. Quem navegava de Conversão para
+ * Transferência via a página encolher de 1180 para 720 — duas larguras de
+ * página no mesmo sistema, que é exatamente o que este arquivo dizia estar
+ * resolvendo três parágrafos acima. E na Transferência, que tem duas colunas
+ * (formulário e beneficiários), 720px davam 340px para cada uma.
+ *
+ * A medida de leitura continua valendo, mas no lugar certo: **no campo, não na
+ * página**. Um `<input>` de valor ou um `<select>` de chave recebe
+ * `max-width` na casa dos 430–530px, ou entra numa grade de duas colunas com o
+ * campo vizinho. Caixa de texto longo — o BR Code de um boleto, a mensagem de
+ * um ticket — usa a largura inteira de propósito, porque ali o conteúdo é
+ * grande de verdade.
+ *
+ * O efeito é conferível: nenhum campo de linha única passa de 560px, e a borda
+ * do conteúdo cai no mesmo lugar em todas as telas.
+ * ------------------------------------------------------------------------- */
+.tela {
+  width: 100%;
+  max-width: calc(980px + 56px);
+  margin-inline: auto;
+  padding: 24px 28px 44px;
+}
+
+/* A exceção. Só entra quando o conteúdo prova que não cabe em 980 — hoje uma
+ * tela, a Mesa Premium. Ver o critério no bloco acima. */
+.tela-largo {
+  max-width: 1600px;
+}
+
+/* O respiro lateral em tela estreita já vale pela `.r-pad`; a `.tela` repete a
+ * regra para quem não tiver as duas classes. */
+@media (max-width: 899px) {
+  .tela {
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+  }
+}
+
+/* -------------------------------------------------------------------------
+ * Menus suspensos que não cabem em tela estreita
+ *
+ * O seletor de período tem os atalhos à esquerda e o calendário à direita:
+ * 168 + 268 = 436px de largura mínima, contra 360px úteis num iPhone. Ancorado
+ * ao gatilho, ele nasce meio fora da tela e empurra a rolagem lateral da
+ * página inteira — o sintoma clássico de menu de desktop levado ao celular.
+ *
+ * Abaixo de 700px o menu deixa de ser suspenso e vira uma folha presa ao
+ * rodapé, na largura útil. É a convenção do próprio sistema operacional para
+ * escolha em tela pequena, e resolve de uma vez o corte lateral, o alcance do
+ * polegar e a lista que passaria da borda de baixo.
+ * ------------------------------------------------------------------------- */
+@media (max-width: 699px) {
+  .menu-flut {
+    position: fixed !important;
+    left: 12px !important;
+    right: 12px !important;
+    top: auto !important;
+    bottom: 12px !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-height: 76vh;
+    overflow-y: auto;
+  }
+
+  /* Atalhos em cima, calendário embaixo — lado a lado não cabe. */
+  .menu-per {
+    flex-direction: column !important;
+  }
+
+  /* O `!important` vence o `maxHeight` inline de 340px, que em coluna empurra
+   * o calendário para fora da folha e faz parecer que ele não existe. */
+  .menu-per > .menu-atalhos {
+    width: auto !important;
+    max-height: 172px !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .menu-per > .menu-cal {
+    min-width: 0 !important;
+  }
+}
+
+/* -------------------------------------------------------------------------
+ * Alvo de toque mínimo em tela de dedo
+ *
+ * A varredura de 26 telas a 375px encontrou 62 controles menores do que
+ * 24×24 CSS px, que é o mínimo do WCAG 2.5.8 (AA): botões de copiar de 13×13
+ * nos Links e nas Chaves Pix, os passos de preço da Mesa com 8×14, e uma
+ * dezena de botões de texto com 14 a 19px de altura.
+ *
+ * O ponto não é estética. Um alvo de 13px exige uma precisão que o polegar não
+ * tem, e quem erra num botão de copiar tenta de novo; quem erra num de cancelar
+ * acerta o vizinho. O tamanho do dedo é o mesmo em qualquer tela — o que muda é
+ * se ele é o dispositivo de entrada.
+ *
+ * Por que aqui e não em cada estilo inline
+ *
+ * São 62 controles em quinze arquivos, com o tamanho vindo de `padding` e
+ * `fontSize` inline. Reescrever cada um espalharia a mesma decisão por quinze
+ * lugares e ainda deixaria de fora o próximo botão escrito amanhã. Uma regra
+ * de área mínima vale para todos, inclusive os que ainda não existem.
+ *
+ * `min-height`/`min-width` não esticam quem já é maior: quem passa de 24px
+ * segue com o tamanho que o componente pediu. E o `!important` está dentro de
+ * media query, que é a única exceção que este projeto abre — sem ele o estilo
+ * inline vence.
+ * ------------------------------------------------------------------------- */
+@media (max-width: 899px) and (pointer: coarse) {
+  main button,
+  main [role='button'],
+  main [role='tab'],
+  main summary,
+  main select {
+    min-height: 24px;
+    min-width: 24px;
+  }
+
+  /* Caixas de marcar e botões de rádio nascem com 13 a 16px e não crescem por
+   * padding: o alvo é a própria caixa. */
+  main input[type='checkbox'],
+  main input[type='radio'] {
+    min-width: 20px !important;
+    min-height: 20px !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Faixa de abas das Configurações
+ *
+ * Segue `configuracoes/SettingsScreen.tsx` do `prototipo-vite-paas`. Três
+ * coisas que só existem em CSS, porque estilo inline não faz media query nem
+ * pseudo-elemento:
+ *
+ * 1. **O rótulo sai abaixo de 1024px.** São doze abas; com o texto, oito ficam
+ *    escondidas fora da faixa e a pessoa tem de rolar às cegas para descobrir
+ *    que existem. Só o ícone cabe todas de uma vez. Acima de 1024 o texto
+ *    volta, porque aí há largura e ícone sozinho é adivinhação.
+ *
+ * 2. **A barra de rolagem fica escondida.** O `::-webkit-scrollbar` global
+ *    deste arquivo desenha uma barra de 9px — dentro de uma faixa de 56px de
+ *    altura ela come um sexto do espaço e corta a base das abas. As setas
+ *    redondas já dizem que há mais conteúdo para o lado.
+ *
+ * 3. **`scroll-snap`**: a faixa para com uma aba inteira à vista, em vez de
+ *    deixar meia aba cortada na borda.
+ * ------------------------------------------------------------------------- */
+.set-abas {
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;          /* Firefox */
+  -ms-overflow-style: none;       /* Edge legado */
+}
+
+.set-abas::-webkit-scrollbar {
+  display: none;
+}
+
+.set-abas > .set-aba {
+  scroll-snap-align: start;
+}
+
+/* Hover só na aba inativa: a ativa já é preenchida com a marca, e escurecê-la
+ * no hover faria parecer que ela mudou de estado. */
+.set-aba[aria-selected='false']:hover {
+  background: var(--surface-3) !important;
+}
+
+@media (max-width: 1023px) {
+  .set-aba-rotulo {
+    display: none;
+  }
+
+  /* Sem rótulo a aba fica quadrada — e o padding de 16px a deixaria larga sem
+   * conteúdo dentro. */
+  .set-aba {
+    padding: 0 11px !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Grade de leitura — rótulo e valor
+ *
+ * O padrão vem do `prototipo-vite-paas`, e a distinção que ele faz é o ponto:
+ *
+ *   - **par de campos de formulário** para em duas colunas e não passa disso
+ *     (`grid-cols-1 lg:grid-cols-2` no `PerfilScreen`, `DadosContaScreen`,
+ *     `DocumentacaoScreen`). Num cartão de 1552px isso dá campo de ~760px, e é
+ *     assim que a plataforma é hoje — largura de campo não é o que precisa de
+ *     mais coluna;
+ *   - **grade de leitura**, onde cada célula é um rótulo com um valor curto,
+ *     abre até três ou quatro (`sm:grid-cols-2 lg:grid-cols-3` no
+ *     `PerfilScreen:91` e no comprovante; `lg:grid-cols-4` no `:193` e `:515`).
+ *     Ali a largura extra vira informação visível de uma vez, em vez de espaço
+ *     em branco entre o rótulo e o valor.
+ *
+ * `auto-fit` no lugar de contagem por breakpoint: o resultado é o mesmo — duas
+ * colunas em tablet, três a quatro em monitor — e não depende de acertar o
+ * ponto de quebra para cada densidade de conteúdo.
+ *
+ * 220px é a largura de "Chave Pix vinculada" com o valor abaixo sem quebrar.
+ * ------------------------------------------------------------------------- */
+.g-leitura {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+}
+
+/* ---------------------------------------------------------------------------
+ * De onde vêm os 980px, e por que a `.tela-painel` não existe mais
+ *
+ * A medida não é invenção: 980 é a largura que o Checkout já usava desde que foi
+ * montado, num `maxWidth` solto no JSX, e foi a apontada como a que funciona.
+ * Ela passou por três estados, e o histórico explica o desenho atual:
+ *
+ *   1. número solto dentro do CheckoutScreen — uma tela só sabia dele;
+ *   2. classe `.tela-painel`, que cada tela precisava pedir;
+ *   3. **o padrão da `.tela`**, com a exceção pedindo (`.tela-largo`).
+ *
+ * O passo 2 para o 3 aconteceu porque o 2 falhou de um jeito específico: com o
+ * padrão em 1600, nove telas ficaram largas sem nunca ter decidido nada, e cada
+ * rodada de ajuste deixava outra para trás. Uma classe que precisa ser lembrada
+ * em 26 arquivos não é padronização, é um convite ao esquecimento. Invertendo,
+ * o esquecimento passa a produzir o resultado certo.
+ *
+ * A `.tela-painel` foi removida em vez de virar apelido de `.tela`: manter as
+ * duas seria manter duas formas de escrever a mesma coisa, e a próxima pessoa
+ * teria de descobrir que são idênticas.
+ *
+ * ## O que 980 faz com o conteúdo, medido
+ *
+ * Na Conversão Cripto, os cartões "TROCAR" e "POR" carregam um seletor de ativo,
+ * um valor e uma rede cada — conteúdo que não cresce com a caixa. A 1552px de
+ * página ficavam com 640px cada e o valor de 30px sobrava sozinho no vazio; a
+ * 980 ficam com 433px, a densidade do Checkout.
+ *
+ * A Negociar Cripto tem duas colunas e **continua com duas**: a grade é
+ * `auto-fit` com mínimo de 320px, então a 980 dá 480px de cada lado em vez de
+ * 762. Eu esperava vê-la empilhar e não empilhou — medido, não suposto.
+ *
+ * ## Registro de proveniência
+ *
+ * Isto **não** veio do `prototipo-vite-paas`. A tela de emitir boleto de lá
+ * (`pix/BoletosScreen.tsx`) roda em largura cheia e resolve densidade com grade
+ * — `md:grid-cols-2` a `md:grid-cols-6` —, não com painel estreito. O
+ * `w-[782px]` do `BoletoModal` de lá é a largura do **documento** do boleto
+ * (logo, CNPJ, código de barras): papel, não interface. O precedente é nosso.
+ * ------------------------------------------------------------------------- */
+
+/* Em tela estreita o respiro cai para 15px (regra da `.tela` acima), e o teto
+ * tem de acompanhar — senão a coluna ganharia 26px que a `.tela-largo` não dá.
+ * Abaixo de 1036 o `max-width` nem morde, mas a conta fica correta em qualquer
+ * largura. */
+@media (max-width: 899px) {
+  .tela {
+    max-width: calc(980px + 30px);
+  }
+}

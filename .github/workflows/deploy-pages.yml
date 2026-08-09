@@ -1,0 +1,108 @@
+# Publicação do protótipo no GitHub Pages.
+#
+# Mesmo arranjo do mutual-terminal-global, adaptado para Next.js em saída
+# estática: `GITHUB_PAGES=true` liga o `basePath`/`assetPrefix` de
+# `/backoffice-corporativo` em `next.config.mjs`, e `output: 'export'` grava o
+# site em `out/`.
+#
+# O `.nojekyll` em `public/` é obrigatório e não é decorativo: o Pages roda
+# Jekyll por padrão, e Jekyll ignora diretório que começa com underscore — o que
+# incluiria `_next/`, ou seja, todo o JS e CSS do build. Sem ele o site sobe e
+# abre em branco.
+# ⚠️ O gatilho é `mainv2`, e não `main`, de propósito. A `main` deste
+# repositório carrega OUTRO sistema — o protótipo Vite do backoffice, com sua
+# própria árvore em `apps/` e um portão (`scripts/verificacao/portoes.mjs`) que
+# REPROVA qualquer workflow contendo `actions/deploy-pages`, `pages: write` ou
+# `name: github-pages`. Os três estão aqui. Publicar a partir da `main` exigiria
+# derrubar aquele portão, que existe porque um `deploy.yml` já publicou duas
+# vezes de uma `main` com a verificação vermelha.
+#
+# `mainv2` é a linha do Terminal Global, e é dela que este site sai.
+name: Publicar no Pages
+
+on:
+  push:
+    branches: [mainv2]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Uma publicação por vez; um push novo não cancela a que já está subindo.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      # ⚠️ ANTES do build, e não depois — a lição vem do `deploy.yml` do
+      # protótipo Vite, que a registrou por escrito: "estando aqui, o site passa
+      # a existir mesmo quando o build falha adiante". Depois do build, um build
+      # vermelho nunca alcança esta etapa, e o site do Pages segue inexistente
+      # sem que o log diga que foi por isso.
+      #
+      # ⛔ `enablement: true` NÃO substitui o ato humano. Criar o site exige
+      # direito de administração do repositório, e o `GITHUB_TOKEN` não o tem —
+      # verificado em 07/08/2026, com "Create Pages site failed: Resource not
+      # accessible by integration". A etapa seguinte existe para dizer isso em
+      # vez de deixar o erro cru, que não explica o que fazer.
+      - name: Configurar Pages
+        id: pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      # `working-directory: .` só neste passo, e só porque ele é `run`: o
+      # `defaults` do job aponta para `app`, e o `$GITHUB_STEP_SUMMARY` não
+      # depende de diretório. Passo `uses` ignora `defaults.run`, então não
+      # recebe (nem aceita) a chave.
+      - name: Diagnosticar Pages não habilitado
+        if: failure() && steps.pages.outcome == 'failure'
+        working-directory: .
+        run: |
+          echo "::error title=GitHub Pages não está habilitado::Habilitar o Pages exige direito de administração e não pode ser feito por workflow. Settings > Pages > Source: GitHub Actions."
+          {
+            echo "### GitHub Pages não está habilitado neste repositório"
+            echo ""
+            echo "Criar o site do Pages exige **direito de administração do repositório** —"
+            echo "\`permissions: pages: write\` não supre isso."
+            echo ""
+            echo "**Ação (uma vez, por quem administra):** *Settings → Pages → Source: **GitHub Actions***."
+            echo ""
+            echo "⚠️ Se o deploy ficar verde e a URL não mudar, a causa provável é outra:"
+            echo "o ambiente \`github-pages\` restringe deploy à branch padrão. Libere \`mainv2\`"
+            echo "em *Settings → Environments → github-pages → Deployment branches*."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - run: npm ci
+
+      - run: npm run build:pages
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: app/out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

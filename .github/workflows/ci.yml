@@ -1,0 +1,90 @@
+# Verificação de toda mudança, antes de virar `main`.
+#
+# Portado do `ci.yml` do mutual-terminal-global, e pelo mesmo motivo que está
+# escrito lá: o deploy do Pages só corre **depois** do merge, então sem isto
+# nada barra um `main` que não compila.
+#
+# Quatro níveis, e cada um pega o que os outros não pegam:
+#
+#   - `lint` acha erro que o bundler engole. JSX não resolve identificador em
+#     tempo de compilação, então um componente referenciado e nunca escrito
+#     compila e mata a tela no primeiro render. `no-undef` pega essa classe.
+#     Este repositório é JS/JSX por decisão (D-03) — sem checagem de tipos, o
+#     lint é a primeira e mais barata rede.
+#   - `build` acha erro de sintaxe e de importação, e prova que a saída
+#     publicável existe. Roda com `GITHUB_PAGES=true` para exercitar o
+#     `basePath` — um caminho que só quebra no build de Pages não pode aparecer
+#     apenas na publicação.
+#   - as asserções de `scripts/verificacao/` provam comportamento em Node, sem
+#     navegador: contraste calculado, integridade da navegação, invariantes.
+#   - o job `navegador` abre as telas em Chromium. Ele existe porque os dois
+#     piores defeitos do terminal global passaram por lint, build e asserção sem
+#     um arranhão — um `TypeError` no render que derrubava o app inteiro, e um
+#     botão chamando método que nunca existiu. Abrir a tela vê.
+#
+# `navegador` é job à parte, e não passo do primeiro, porque instala navegador e
+# serve o `out`: quando estiver lento, a equipe precisa poder olhar lint e build
+# sem esperar por ele.
+name: Verificação
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: app
+
+jobs:
+  verificar:
+    name: Lint, build e asserções
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build de Pages
+        run: npm run build:pages
+
+      - name: Asserções
+        run: npm run verificar
+
+  navegador:
+    name: Telas em Chromium
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps chromium
+
+      - run: npm run build
+
+      - name: Abrir as telas
+        run: npm run e2e

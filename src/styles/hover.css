@@ -1,0 +1,23 @@
+/* Gerado por tools/dc-to-jsx.mjs a partir dos atributos `style-hover` do
+ * protótipo. O runtime original criava estas regras em tempo de execução,
+ * sempre com `!important` para vencer o estilo inline do elemento. */
+
+.hv-0:hover { color:#fff !important; }
+.hv-1:hover { border-color:var(--ink) !important; }
+.hv-2:hover { border-color:var(--ink) !important; box-shadow:0 8px 20px rgba(15,31,56,.09) !important; transform:translateY(-2px) !important; }
+.hv-3:hover { background:#2C3A78 !important; }
+.hv-4:hover { background:#e6ebf3 !important; }
+.hv-5:hover { background:var(--surface-3) !important; }
+.hv-6:hover { background:#fafbfd !important; }
+.hv-7:hover { background:var(--surface-2) !important; }
+.hv-8:hover { filter:brightness(1.08) !important; }
+.hv-9:hover { background:#12703d !important; }
+.hv-a:hover { background:var(--acc-red-bg) !important; }
+.hv-b:hover { background:#e8edf6 !important; }
+.hv-c:hover { background:rgba(255,255,255,.12) !important; }
+.hv-d:hover { background:rgba(255,255,255,.1) !important; }
+.hv-e:hover { background:rgba(255,255,255,.05) !important; }
+.hv-f:hover { filter:brightness(1.06) !important; }
+.hv-g:hover { background:rgba(255,255,255,.06) !important; }
+.hv-h:hover { background:rgba(255,255,255,.07) !important; }
+.hv-i:hover { background:#f2f5fa !important; }
