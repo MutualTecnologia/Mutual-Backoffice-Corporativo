@@ -40,10 +40,6 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-defaults:
-  run:
-    working-directory: app
-
 jobs:
   verificar:
     name: Lint, build e asserções
@@ -55,7 +51,7 @@ jobs:
         with:
           node-version: '20'
           cache: npm
-          cache-dependency-path: app/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - run: npm ci
 
@@ -78,7 +74,7 @@ jobs:
         with:
           node-version: '20'
           cache: npm
-          cache-dependency-path: app/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - run: npm ci
 

@@ -1,6 +1,6 @@
 /**
  * O protótipo é publicado no GitHub Pages em
- * https://mutual-processadora-de-pagamentos.github.io/backoffice-corporativo/,
+ * https://mutualtecnologia.github.io/Mutual-Backoffice-Corporativo/,
  * ou seja, em um subdiretório — daí `basePath`/`assetPrefix` no build de Pages.
  * Em desenvolvimento a base é `/`, para o dev server seguir em
  * http://localhost:3002/.
@@ -20,7 +20,7 @@
  * depende do lint para pegar identificador não declarado — a classe de defeito
  * que já derrubou uma tela do terminal global em branco.
  */
-const PAGES_BASE = '/backoffice-corporativo'
+const PAGES_BASE = '/Mutual-Backoffice-Corporativo'
 const isPages = process.env.GITHUB_PAGES === 'true'
 
 /** @type {import('next').NextConfig} */
